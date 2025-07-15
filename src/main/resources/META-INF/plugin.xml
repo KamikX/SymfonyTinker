@@ -1,15 +1,27 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
-    <id>com.github.kamikx.symfonytinker</id>
-    <name>SymfonyTinker</name>
-    <vendor>kamikx</vendor>
+    <id>sk.kamikx.symfonytinker</id>
+    <name>Symfony Tinker</name>
+    <vendor>Kamil Donoval</vendor>
 
+
+<!--    <depends>com.jetbrains.php</depends>-->
     <depends>com.intellij.modules.platform</depends>
 
-    <resource-bundle>messages.MyBundle</resource-bundle>
+    <resource-bundle>messages.SymfonyTinkerBundle</resource-bundle>
+
+
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.kamikx.symfonytinker.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
-        <postStartupActivity implementation="com.github.kamikx.symfonytinker.startup.MyProjectActivity" />
+
+        <!-- Icons -->
+        <iconMapper mappingFile="SymfonyTinkerIconMappings.json"/>
+
+        <toolWindow
+                anchor="right"
+                factoryClass="sk.kamikx.symfonytinker.toolWindow.SymfonyTinkerToolWindowFactory"
+                icon="sk.kamikx.symfonytinker.SymfonyTinkerIcons.ToolWindowIcon"
+                id="SymfonyTinkerWindow"/>
+        <postStartupActivity implementation="sk.kamikx.symfonytinker.startup.MyProjectActivity" />
     </extensions>
 </idea-plugin>

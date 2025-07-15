@@ -1,0 +1,9 @@
+{
+  "icons": {
+    "expui": {
+      "toolwindow": {
+        "toolWindowIcon.svg": "icons/toolWindowIcon.svg"
+      }
+    }
+  }
+}

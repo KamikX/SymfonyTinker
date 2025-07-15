@@ -1,4 +1,4 @@
-package com.github.kamikx.symfonytinker.startup
+package sk.kamikx.symfonytinker.startup
 
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project

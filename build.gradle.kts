@@ -1,6 +1,7 @@
 import org.jetbrains.changelog.Changelog
 import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 
 plugins {
     id("java") // Java support
@@ -33,6 +34,7 @@ repositories {
 dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.opentest4j)
+    implementation("com.google.code.gson:gson:2.11.0")
 
     // IntelliJ Platform Gradle Plugin Dependencies Extension - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-dependencies-extension.html
     intellijPlatform {
@@ -152,5 +154,16 @@ intellijPlatformTesting {
                 robotServerPlugin()
             }
         }
+    }
+}
+
+val runPhpStorm by intellijPlatformTesting.runIde.registering {
+    type = IntelliJPlatformType.PhpStorm
+    version = providers.gradleProperty("platformVersion")
+    // Persistent sandbox directory
+    sandboxDirectory = layout.projectDirectory.dir(providers.gradleProperty("testSandboxDirPath").get())
+    task {
+        // Open a project directly
+        args = listOf(providers.gradleProperty("testProjectDirPath").get())
     }
 }

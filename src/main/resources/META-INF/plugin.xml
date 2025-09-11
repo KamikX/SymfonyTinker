@@ -5,11 +5,10 @@
     <vendor>Kamil Donoval</vendor>
 
 
-<!--    <depends>com.jetbrains.php</depends>-->
+    <depends>com.jetbrains.php</depends>
     <depends>com.intellij.modules.platform</depends>
 
     <resource-bundle>messages.SymfonyTinkerBundle</resource-bundle>
-
 
 
     <extensions defaultExtensionNs="com.intellij">
@@ -17,11 +16,80 @@
         <!-- Icons -->
         <iconMapper mappingFile="SymfonyTinkerIconMappings.json"/>
 
+        <!-- Custom file type -->
+        <fileType
+                name="SymfonyTinkerConsoleType"
+                implementationClass="sk.kamikx.symfonytinker.types.SymfonyTinkerConsoleType"
+                fieldName="INSTANCE"
+                language="PHP"
+                patterns="*.st.php"/>
+
+        <!--  Application (global settings, displayName is set programmatically in constructor) -->
+        <applicationConfigurable
+                parentId="tools"
+                instance="sk.kamikx.symfonytinker.settings.AppSettingsConfigurable"
+                id="sk.kamikx.symfonytinker.settings.AppSettingsConfigurable"
+                key="st.app.settings.displayName"
+                bundle="messages.SymfonyTinkerBundle"/>
+        />
+
+        <!--  Project settings  -->
+        <projectConfigurable
+                parentId="sk.kamikx.symfonytinker.settings.AppSettingsConfigurable"
+                instance="sk.kamikx.symfonytinker.settings.ProjectSettingsConfigurable"
+                id="sk.kamikx.symfonytinker.settings.ProjectSettingsConfigurable"
+                key="st.project.settings.displayName"
+                bundle="messages.SymfonyTinkerBundle"/>
+        nonDefaultProject="true"
+        />
+
+
+        <!-- Notification Group -->
+        <notificationGroup id="SymfonyTinker"
+                           displayType="BALLOON"
+                           isLogByDefault="true" bundle="messages.SymfonyTinkerBundle"
+                           key="st.notification.groupKey"/>
+
+
         <toolWindow
                 anchor="right"
                 factoryClass="sk.kamikx.symfonytinker.toolWindow.SymfonyTinkerToolWindowFactory"
                 icon="sk.kamikx.symfonytinker.SymfonyTinkerIcons.ToolWindowIcon"
                 id="SymfonyTinkerWindow"/>
-        <postStartupActivity implementation="sk.kamikx.symfonytinker.startup.MyProjectActivity" />
+        <postStartupActivity implementation="sk.kamikx.symfonytinker.startup.SymfonyTinkerProjectActivity"/>
     </extensions>
+
+    <!-- Actions -->
+    <actions>
+
+        <action id="EditProjectSettingsAction"
+                class="sk.kamikx.symfonytinker.action.notification.EditProjectSettingsAction"
+        />
+        <action id="EditPhpInterpreterSettingsAction"
+                class="sk.kamikx.symfonytinker.action.notification.EditPhpInterpreterSettingsAction"/>
+
+        <action id="sk.kamikx.symfonytinker.action.OpenNewConsoleAction"
+                class="sk.kamikx.symfonytinker.action.OpenNewConsoleAction"
+                description="Open new console"
+                text="Open New Console"
+                icon="AllIcons.Actions.AddFile"
+        />
+
+        <action id="sk.kamikx.symfonytinker.action.RunConsoleAction"
+                class="sk.kamikx.symfonytinker.action.RunConsoleAction"
+                description="Run console"
+                text="Run Console"
+                icon="AllIcons.Debugger.ThreadRunning">
+        </action>
+
+        <action id="sk.kamikx.symfonytinker.action.ClearConsoleAction"
+                class="sk.kamikx.symfonytinker.action.ClearConsoleAction"
+                description="Clear console"
+                text="Clear Console"
+                icon="AllIcons.Actions.ClearCash"
+        />
+
+    </actions>
+
+
 </idea-plugin>

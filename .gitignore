@@ -2,4 +2,6 @@
 .idea
 .intellijPlatform
 .qodana
+.idea-sandbox
+.kotlin
 build

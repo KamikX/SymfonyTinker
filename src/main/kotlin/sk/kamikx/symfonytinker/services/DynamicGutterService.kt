@@ -1,5 +1,6 @@
 package sk.kamikx.symfonytinker.services
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.editor.Editor
@@ -13,51 +14,57 @@ import sk.kamikx.symfonytinker.markers.RunGutterMarker
 import sk.kamikx.symfonytinker.types.SymfonyTinkerConsoleType
 
 @Service(Service.Level.PROJECT)
-class DynamicGutterService(private val project: Project) {
+class DynamicGutterService(private val project: Project) : Disposable {
 
-    val connection: MessageBusConnection = project.messageBus.connect()
+    private val connection: MessageBusConnection = project.messageBus.connect(this)
 
-    fun start() {
+    init {
+
         // Register listener for file open/close events
         connection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, object : FileEditorManagerListener {
 
-            override fun fileClosed(
-                source: FileEditorManager,
-                file: VirtualFile
-            ) {
-                destroyCarterMarker(file, source.selectedTextEditor)
-            }
-
             override fun fileOpened(source: FileEditorManager, file: VirtualFile) {
-                addCarterMarker(file, source.selectedTextEditor)
+                addGutterMarker(file, source.selectedTextEditor)
             }
-
         })
 
-        // Process current opened files
-        val fileEditorManager = FileEditorManager.getInstance(project)
-        fileEditorManager.allEditors.forEach { editor ->
+        // Process currently opened files
+        FileEditorManager.getInstance(project).allEditors.forEach { editor ->
             if (editor is TextEditor) {
-                addCarterMarker(editor.file, editor.editor)
+                addGutterMarker(editor.file, editor.editor)
             }
         }
     }
 
-    private fun addCarterMarker(file: VirtualFile?, editor: Editor?) {
+    private fun addGutterMarker(file: VirtualFile?, editor: Editor?) {
         if (file == null || editor == null) return
         if (file.fileType is SymfonyTinkerConsoleType) {
-            ApplicationManager.getApplication().invokeLater {
-                val carterMarker = RunGutterMarker(editor)
-                editor.putUserData(RunGutterMarker.KEY, carterMarker)
-            }
+            ApplicationManager.getApplication().invokeLater({
+                val gutterMarker = RunGutterMarker(editor)
+                editor.putUserData(RunGutterMarker.KEY, gutterMarker)
+            }, project.disposed)
         }
     }
 
-    private fun destroyCarterMarker(file: VirtualFile?, editor: Editor?) {
+    private fun destroyGutterMarker(file: VirtualFile?, editor: Editor?, withInvokeLater: Boolean = false) {
         if (file == null || editor == null) return
         if (file.fileType is SymfonyTinkerConsoleType) {
-            ApplicationManager.getApplication().invokeLater {
+            if (withInvokeLater) {
+                ApplicationManager.getApplication().invokeLater({
+                    RunGutterMarker.removeMarker(editor)
+                }, project.disposed)
+            } else {
                 RunGutterMarker.removeMarker(editor)
+            }
+        }
+    }
+
+    override fun dispose() {
+        // cleanup if needed (e.g., remove markers from all open editors)
+        // Remove markers from all open editors
+        FileEditorManager.getInstance(project).allEditors.forEach { editor ->
+            if (editor is TextEditor) {
+                destroyGutterMarker(editor.file, editor.editor)
             }
         }
     }

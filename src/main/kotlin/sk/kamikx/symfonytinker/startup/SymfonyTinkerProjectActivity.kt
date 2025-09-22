@@ -9,9 +9,8 @@ class SymfonyTinkerProjectActivity : ProjectActivity {
 
     override suspend fun execute(project: Project) {
 
-        // Run dynamic gutter service
+        // Init a dynamic gutter service
         val dynamicGutterService = project.getService(DynamicGutterService::class.java)
-        dynamicGutterService.start()
     }
 
 }

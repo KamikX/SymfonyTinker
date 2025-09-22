@@ -20,7 +20,6 @@ class SymfonyTinkerToolWindowFactory : ToolWindowFactory {
                 actionManager.getAction(RunConsoleAction.ID),
                 actionManager.getAction(ClearConsoleAction.ID),
                 actionManager.getAction(OpenNewConsoleAction.ID),
-                //TODO another actions
             )
         )
 

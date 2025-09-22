@@ -23,13 +23,13 @@ import com.jetbrains.php.config.interpreters.PhpInterpreter
 import com.jetbrains.php.run.script.PhpScriptRunConfiguration
 import com.jetbrains.php.run.script.PhpScriptRuntimeConfigurationProducer
 import sk.kamikx.symfonytinker.SymfonyTinkerBundle
-import sk.kamikx.symfonytinker.settings.AppSettings
 import sk.kamikx.symfonytinker.settings.ProjectSettings
 import sk.kamikx.symfonytinker.utils.NotificationUtils
 import java.io.File
 import java.nio.charset.StandardCharsets
 import kotlin.io.readText
 import sk.kamikx.symfonytinker.listeners.PhpProcessListener
+import sk.kamikx.symfonytinker.settings.AppSettings
 import sk.kamikx.symfonytinker.utils.getSymfonyTinkerToolWindow
 
 @Service(Service.Level.PROJECT)
@@ -38,6 +38,7 @@ class PhpService(private val project: Project) {
     private val progressManager = ProgressManager.getInstance()
     private val toolWindowManager = ToolWindowManager.getInstance(project)
     private val projectSettings = ProjectSettings.getInstance(project)
+    private val appSettings = AppSettings.getInstance()
     private val phpProcessListener = PhpProcessListener(project)
 
     private val phpScriptRunConfiguration: PhpScriptRunConfiguration = PhpScriptRunConfiguration(
@@ -84,13 +85,6 @@ class PhpService(private val project: Project) {
         }
 
 
-    private val phpCustomCasterCode: String
-        get() {
-            val fileStream = javaClass.classLoader.getResourceAsStream("scripts/ObjectCaster.php")
-            return fileStream?.reader(Charsets.UTF_8)?.readText() ?: ""
-        }
-
-
     fun runScript(file: VirtualFile) {
 
         val document = FileDocumentManager.getInstance().getDocument(file)
@@ -99,6 +93,10 @@ class PhpService(private val project: Project) {
             return
         }
         val phpCode = document.text
+
+
+        // If the code is empty or has only 1 line, do nothing
+        if (phpCode.isEmpty() || document.lineCount == 1 || phpCode.trim() == "<?php" ) return
 
         thisLogger().debug("Run script...")
         thisLogger().debug("Symfony root path: $symfonyRootPath")
@@ -124,8 +122,8 @@ class PhpService(private val project: Project) {
         }
 
         // Check if PHS scripts are present
-        if (phpPsyShConsoleRunCode.isEmpty() or phpCustomShellCode.isEmpty() or phpCustomCasterCode.isEmpty()) {
-            thisLogger().error("Php scripts problem: PsySH script state: ${phpPsyShConsoleRunCode.isEmpty()}. Custom Shell script state: ${phpCustomShellCode.isEmpty()}. \nCustom Caster script state: ${phpCustomCasterCode.isEmpty()}.")
+        if (phpPsyShConsoleRunCode.isEmpty() or phpCustomShellCode.isEmpty()) {
+            thisLogger().error("Php scripts problem: PsySH script state: ${phpPsyShConsoleRunCode.isEmpty()}. Custom Shell script state: ${phpCustomShellCode.isEmpty()}")
             return
         }
 
@@ -144,7 +142,7 @@ class PhpService(private val project: Project) {
                     phpPsyShConsoleRunCode,
                     phpCode,
                     projectSettings.asJsonString(),
-                    phpCustomCasterCode,
+                    appSettings.asJsonString(),
                     phpCustomShellCode
                 )
             )

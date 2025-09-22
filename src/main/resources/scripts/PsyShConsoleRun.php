@@ -12,23 +12,18 @@ use Symfony\Component\VarDumper\Cloner\VarCloner;
 use Symfony\Component\VarDumper\Dumper\AbstractDumper;
 use Symfony\Component\VarDumper\Dumper\CliDumper;
 use Symfony\Component\VarDumper\Dumper\HtmlDumper;
+use Symfony\Bundle\FrameworkBundle\Console\Application;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\BufferedOutput;
 
 
-echo "%%START-OUTPUT%%";
+echo ">>START-OUTPUT<<";
 
 $kernel = null;
 
-
-
 // Get settings
 $projectSettings = json_decode($argv[2]) ?? new stdClass();
-
-// Load custom caster class
-$customCasterCode = $argv[3] ?? null;
-eval($customCasterCode);
-
-
-
+$appSettings = json_decode($argv[3]) ?? new stdClass();
 
 $composerJsonFile = ($projectSettings->vendorRoot ?: __DIR__) . '/composer.json';
 if (!file_exists($composerJsonFile)) {
@@ -50,6 +45,12 @@ require ($projectSettings->vendorRoot ?: __DIR__) . '/vendor/autoload.php';
 //Load custom shell class
 $customShellCode = $argv[4] ?? null;
 eval($customShellCode);
+
+
+// NOTE: not used
+// Load Class Alias Autoloader
+//$classAliasAutoloader = $argv[4] ?? null;
+//eval($classAliasAutoloader);
 
 
 try {
@@ -77,44 +78,50 @@ if (method_exists($config, 'setInteractiveMode')) {
     $config->setInteractiveMode(Configuration::INTERACTIVE_MODE_DISABLED);
 }
 $config->setColorMode(Configuration::COLOR_MODE_FORCED);
-
-
-// Custom casters
-// $casters = [
-//     '*' => 'ObjectCaster::cast'
-// ];
-
-
-// $config->getPresenter()->addCasters($casters);
 $config->setHistoryFile(defined('PHP_WINDOWS_VERSION_BUILD') ? 'nul' : '/dev/null');
 
 
 $shell = new CustomShell($config);
+$shell->setVarDumperEnabled($appSettings->varDumperEnabled ?? true);
 
 // Set scope variables
 $container = $kernel->getContainer();
 $doctrine = $container->get('doctrine');
+$parameters = $container->getParameterBag()->all();
 $em = $container->get('doctrine.orm.entity_manager');
 $router = $container->get('router');
+
+$runConsole = function($command): string {
+    global $kernel;
+    $application = new Application($kernel);
+    $command = $application->find($command);
+    $input = new ArrayInput([]);
+    $output = new BufferedOutput();
+    $command->run($input, $output);
+    return $output->fetch();
+};
+
+
 $shell->setScopeVariables([
     'kernel' => $kernel,
     'container' => $container,
     'doctrine' => $doctrine,
     'em' => $em,
     'router' => $router,
+    'parameters' => $parameters,
+    'runConsole' => $runConsole,
 ]);
+
 
 
 $output = new ConsoleOutput();
 $shell->setOutput($output);
 $closure = new ExecutionLoopClosure($shell);
 
-//TODO upravit pre Symfony
-//use Laravel\Tinker\ClassAliasAutoloader;
+// NOTE: this is not needed anymore, because we use power of IDE: full access to  Symfony classes—backed by autocompletion, syntax highlighting, and error checks
+// Register class alias autoloader
 //$autoloadClassMap = ($projectSettings->vendorRoot ?: __DIR__) . '/vendor/composer/autoload_classmap.php';
-//if (class_exists('\Laravel\Tinker\ClassAliasAutoloader')) {
-//    $loader = ClassAliasAutoloader::register($shell, $autoloadClassMap);
-//}
+//$loader = CustomClassAliasAutoloader::register($shell, $autoloadClassMap);
 
 
 $unsanitizedRunCode = token_get_all($argv[1]);
@@ -130,13 +137,12 @@ foreach ($unsanitizedRunCode as $token) {
     $sanitizedRunCode .= $token;
 }
 
-
 $shell->addInput($sanitizedRunCode, true);
 if ($isSymfonyProject && $projectSettings->terminateApp) {
-    $shell->addInput('echo "%%END-OUTPUT%%";', true);
+    $shell->addInput('echo ">>END-OUTPUT<<";', true);
     $shell->addInput('$kernel->shutdown();', true);
 }
-$shell->addInput('usleep(250000); throw new \Psy\Exception\BreakException("%%END-OUTPUT%%");', true);
+$shell->addInput('usleep(250000); throw new \Psy\Exception\BreakException(">>END-OUTPUT<<");', true);
 $closure->execute();
 
 if (isset($loader)) {

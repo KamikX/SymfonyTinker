@@ -1,5 +1,6 @@
 package sk.kamikx.symfonytinker.settings
 
+import com.google.gson.JsonObject
 import com.intellij.openapi.components.*
 import com.intellij.openapi.components.Service
 
@@ -39,9 +40,24 @@ class AppSettings() : SerializablePersistentStateComponent<AppSettingsState>(App
             }
         }
 
+
+    var varDumperEnabled
+        get() = state.varDumperEnabled
+        set(value) {
+            updateState {
+                it.copy(varDumperEnabled = value)
+            }
+        }
+
     companion object {
         @JvmStatic
         fun getInstance(): AppSettings = service()
+    }
+
+    fun asJsonString(): String {
+        val projectSettingsObject = JsonObject()
+        projectSettingsObject.addProperty("varDumperEnabled", this.varDumperEnabled)
+        return projectSettingsObject.toString()
     }
 
 }
